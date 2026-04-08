@@ -39,7 +39,7 @@ This system simulates how platforms like Uber/Ola handle ride requests:
 
 ---
 
-### 3️⃣ Worker Service (Golang)
+### 3️⃣ Worker Service 
 - Polls tasks from Task Service  
 - Fetches available drivers  
 - Assigns driver using atomic locking  
