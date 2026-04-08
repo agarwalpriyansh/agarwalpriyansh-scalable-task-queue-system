@@ -29,6 +29,34 @@ services:
       timeout: 5s
       retries: 5
 
+  ride-postgres:
+    image: postgres:15
+    container_name: ride-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ride_data
+    ports:
+      - "5433:5432" # Hosted on 5433 externally
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
@@ -38,6 +66,7 @@ services:
     environment:
       - PORT=3000
       - RABBITMQ_URL=amqp://rabbitmq
+      - RIDE_SERVICE_URL=http://ride-service:4000
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -67,4 +96,40 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq
     depends_on:
       rabbitmq:
+        condition: service_healthy
+
+  driver-service:
+    build: ./driver-service
+    container_name: driver-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - REDIS_URL=redis://redis:6379
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/ride_booking?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ride-service:
+    build: ./ride-service
+    container_name: ride-service
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - RABBITMQ_URL=amqp://rabbitmq
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ride_data
+      - POSTGRES_HOST=ride-postgres
+      - POSTGRES_PORT=5432
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      ride-postgres:
         condition: service_healthy

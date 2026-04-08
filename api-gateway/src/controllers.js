@@ -45,22 +45,42 @@ const requestRide = async (req, res) => {
     }
 };
 
-const getRideStatus = (req, res) => {
+const getRideStatus = async (req, res) => {
     const { task_id } = req.params;
     if (!task_id) {
         return res.status(400).json({ error: 'Missing task_id' });
     }
 
-    const status = taskStatusCache.get(task_id);
-    if (!status) {
-        // Provide a generic response if not found in local mock cache
-        return res.status(404).json({ error: 'Task not found or status unknown' });
-    }
+    try {
+        const rideServiceUrl = process.env.RIDE_SERVICE_URL || 'http://localhost:4000';
+        const response = await fetch(`${rideServiceUrl}/rides/${task_id}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            return res.status(200).json(data);
+        }
+        
+        // If the Ride Service yields 404, the ride is likely still processing in the active cluster!
+        if (response.status === 404) {
+            const status = taskStatusCache.get(task_id);
+            if (status) {
+                return res.status(200).json({ task_id, status });
+            }
+            return res.status(404).json({ error: 'Task not found or status unknown' });
+        }
+        
+        return res.status(response.status).json({ error: 'Upstream Ride Service Error' });
 
-    return res.status(200).json({
-        task_id,
-        status
-    });
+    } catch (err) {
+        console.error('Network Error fetching from Ride Service:', err.message);
+        
+        // Degrade gracefully utilizing the active processing cache layer if Ride Service network is severed
+        const status = taskStatusCache.get(task_id);
+        if (status) {
+            return res.status(200).json({ task_id, status });
+        }
+        return res.status(500).json({ error: 'Internal Gateway Server Error' });
+    }
 };
 
 module.exports = { requestRide, getRideStatus };
