@@ -14,6 +14,8 @@ func main() {
 	config.Load() // this loads .env AND sets AppConfig
 
 	db.InitPostgres(config.AppConfig.PostgresURL)
+	db.RunMigrations()
+	db.SeedDrivers()
 	db.InitRedis(config.AppConfig.RedisURL)
 
 	r := gin.Default()
