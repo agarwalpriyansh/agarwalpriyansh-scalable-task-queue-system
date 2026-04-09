@@ -32,7 +32,11 @@ async function startService() {
     });
 }
 
-startService().catch((err) => {
-    console.error('💥 Critical Engine Failure:', err.message);
-    process.exit(1);
-});
+if (require.main === module) {
+    startService().catch((err) => {
+        console.error('💥 Critical Engine Failure:', err.message);
+        process.exit(1);
+    });
+}
+
+module.exports = { app };

@@ -1,0 +1,28 @@
+=== RUN   TestProcessTask_Success
+--- FAIL: TestProcessTask_Success (0.01s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered, repanicked]
+[signal 0xc0000005 code=0x0 addr=0x24 pc=0x7ff7851adbb4]
+
+goroutine 21 [running]:
+testing.tRunner.func1.2({0x7ff7852d6640, 0x7ff785653040})
+	C:/Program Files/Go/src/testing/testing.go:1974 +0x239
+testing.tRunner.func1()
+	C:/Program Files/Go/src/testing/testing.go:1977 +0x349
+panic({0x7ff7852d6640?, 0x7ff785653040?})
+	C:/Program Files/Go/src/runtime/panic.go:860 +0x13a
+sync/atomic.(*Bool).Load(...)
+	C:/Program Files/Go/src/sync/atomic/type.go:19
+log.(*Logger).output(0x7ff7852be8e0?, 0x7ff78536e858?, 0x7ff7856b2540?, 0x18901f357dd8?)
+	C:/Program Files/Go/src/log/log.go:202 +0x34
+log.(*Logger).Println(0x18901f332110?, {0x18901f357e50?, 0x7ff784fd3a65?, 0x18901f40e3a0?})
+	C:/Program Files/Go/src/log/log.go:275 +0x3f
+worker-service/worker.ProcessTask({{0x7ff7853443ed, 0x6}, {0x7ff785368278, 0x1}, {0x7ff785368280, 0x1}, 0x0})
+	C:/Users/Dell/Desktop/scalable-task-queue-system/worker-service/worker/worker.go:16 +0x109
+worker-service/worker.TestProcessTask_Success(0x18901f49a200?)
+	C:/Users/Dell/Desktop/scalable-task-queue-system/worker-service/worker/worker_test.go:41 +0x20f
+testing.tRunner(0x18901f49a200, 0x7ff785366ed8)
+	C:/Program Files/Go/src/testing/testing.go:2036 +0xc3
+created by testing.(*T).Run in goroutine 1
+	C:/Program Files/Go/src/testing/testing.go:2101 +0x4a9
+FAIL	worker-service/worker	2.510s
+FAIL

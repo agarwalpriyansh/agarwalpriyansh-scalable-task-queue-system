@@ -37,9 +37,10 @@ async function startConsumers() {
                     client.release();
                 }
 
-                // Dispatch task to workers
-                channel.sendToQueue('worker_queue', Buffer.from(JSON.stringify(payload)), { persistent: true });
-                console.log(`📤 Task ${payload.task_id} dispatched to worker_queue`);
+                // Dispatch task to Driver Service for allocation
+                channel.assertQueue('driver_allocation_queue', { durable: true });
+                channel.sendToQueue('driver_allocation_queue', Buffer.from(JSON.stringify(payload)), { persistent: true });
+                console.log(`📤 Task ${payload.task_id} dispatched to driver_allocation_queue`);
 
                 channel.ack(msg);
             } catch (error) {
