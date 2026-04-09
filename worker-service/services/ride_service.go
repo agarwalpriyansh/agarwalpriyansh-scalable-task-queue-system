@@ -11,8 +11,11 @@ import (
 
 func CreateRide(task models.Task, driverID string) {
 	body, _ := json.Marshal(map[string]string{
-		"task_id":   task.ID,
-		"driver_id": driverID,
+		"task_id":          task.ID,
+		"user_id":          task.UserID,
+		"driver_id":        driverID,
+		"pickup_location":  task.PickupLocation,
+		"dropoff_location": task.DropoffLocation,
 	})
 
 	_, err := http.Post(config.RIDE_SERVICE+"/ride/create", "application/json", bytes.NewBuffer(body))

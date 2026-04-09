@@ -28,9 +28,9 @@ func Load() {
 	}
 
 	AppConfig = Config{
-		PostgresURL:    getEnv("POSTGRES_URL", "postgres://postgres@127.0.0.1:5432/ridedb?sslmode=disable"),
+		PostgresURL:    getEnv("POSTGRES_URL", "postgres://postgres@127.0.0.1:5432/ride_booking?sslmode=disable"),
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
-		Port:           getEnv("PORT", "8082"),
+		Port:           getEnv("PORT", "8081"),
 		LockTTLSeconds: ttl,
 	}
 

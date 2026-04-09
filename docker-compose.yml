@@ -75,7 +75,10 @@ services:
     build: ./task-service
     container_name: task-service
     restart: unless-stopped
+    ports:
+      - "5000:5000"
     environment:
+      - PORT=5000
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=ride_booking
@@ -94,9 +97,18 @@ services:
     restart: unless-stopped
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
+      - TASK_SERVICE_URL=http://task-service:5000
+      - DRIVER_SERVICE_URL=http://driver-service:8081
+      - RIDE_SERVICE_URL=http://ride-service:4000
     depends_on:
       rabbitmq:
         condition: service_healthy
+      task-service:
+        condition: service_started
+      driver-service:
+        condition: service_started
+      ride-service:
+        condition: service_started
 
   driver-service:
     build: ./driver-service

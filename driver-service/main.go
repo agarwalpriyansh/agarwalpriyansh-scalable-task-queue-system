@@ -23,6 +23,7 @@ func main() {
 	})
 
 	r.GET("/drivers/nearby", handlers.GetNearbyDrivers)
+	r.POST("/drivers", handlers.CreateDriver)
 	r.POST("/drivers/lock", handlers.LockDriver)
 	r.POST("/drivers/release", handlers.ReleaseDriver)
 

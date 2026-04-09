@@ -1,11 +1,10 @@
-FROM golang:alpine AS builder
-WORKDIR /app
-COPY go.mod ./
-# RUN go mod download # Uncomment when dependencies are added
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o worker-app .
-
-FROM alpine:latest
-WORKDIR /root/
-COPY --from=builder /app/worker-app .
+FROM golang:alpine AS builder 
+WORKDIR /app 
+COPY go.mod go.sum ./ 
+RUN go mod download 
+COPY . . 
+RUN CGO_ENABLED=0 GOOS=linux go build -o worker-app . 
+FROM alpine:latest 
+WORKDIR /root/ 
+COPY --from=builder /app/worker-app . 
 CMD ["./worker-app"]

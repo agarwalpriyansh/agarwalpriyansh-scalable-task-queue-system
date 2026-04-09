@@ -8,6 +8,9 @@ const PORT = process.env.PORT || 4000;
 
 app.use(express.json());
 
+// Health check
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok', service: 'ride-service' }));
+
 // Final internal status API
 app.get('/rides/:task_id', async (req, res) => {
     const { task_id } = req.params;
@@ -20,6 +23,29 @@ app.get('/rides/:task_id', async (req, res) => {
     } catch (error) {
         console.error('Error fetching ride:', error);
         return res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Create ride record
+app.post('/ride/create', async (req, res) => {
+    const { task_id, user_id, driver_id, pickup_location, dropoff_location } = req.body;
+    
+    if (!task_id || !user_id || !driver_id || !pickup_location || !dropoff_location) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        await pool.query(
+            `INSERT INTO completed_rides (task_id, user_id, driver_id, pickup_location, dropoff_location, status) 
+             VALUES ($1, $2, $3, $4, $5, 'COMPLETED') 
+             ON CONFLICT (task_id) DO NOTHING`,
+            [task_id, user_id, driver_id, pickup_location, dropoff_location]
+        );
+        console.log(`✨ Ride record created for task: ${task_id}`);
+        res.status(201).json({ message: 'Ride created successfully' });
+    } catch (err) {
+        console.error('Error creating ride record:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
