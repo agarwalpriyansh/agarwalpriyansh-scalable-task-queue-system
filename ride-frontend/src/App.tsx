@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import BookingForm from './components/BookingForm';
 import RideStatus from './components/RideStatus';
-import { Car, History, CreditCard, Shield, User as UserIcon } from 'lucide-react';
+import { Car, CreditCard, Shield, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getOrGenerateUserId } from './utils/user';
 
