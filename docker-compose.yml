@@ -120,6 +120,7 @@ services:
       - PORT=8081
       - REDIS_URL=redis://redis:6379
       - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/ride_booking?sslmode=disable
+      - LOCK_TTL_SECONDS=60
     depends_on:
       postgres:
         condition: service_healthy

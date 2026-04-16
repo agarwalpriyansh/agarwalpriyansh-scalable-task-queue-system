@@ -42,3 +42,20 @@ func LockDriver(driverID string, taskID string) bool {
 
 	return resp.StatusCode == 200
 }
+
+func ReleaseDriver(driverID string, taskID string) bool {
+	body, _ := json.Marshal(map[string]string{
+		"driver_id": driverID,
+		"task_id":   taskID,
+		"status":    "available",
+	})
+
+	resp, err := http.Post(config.DRIVER_SERVICE+"/drivers/release", "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		utils.ErrorLogger.Println("Driver release failed:", err)
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == 200
+}

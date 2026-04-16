@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"worker-service/config"
 	"worker-service/models"
 	"worker-service/services"
@@ -18,6 +19,15 @@ func ProcessTask(task models.Task) {
 		if services.LockDriver(d.ID, task.ID) {
 			utils.InfoLogger.Println("Driver assigned:", d.ID)
 			services.CreateRide(task, d.ID)
+
+			// Simulating ride duration as requested (1 minute)
+			utils.InfoLogger.Println("Ride in progress for task:", task.ID)
+			time.Sleep(1 * time.Minute)
+
+			// Free the driver after the ride
+			services.ReleaseDriver(d.ID, task.ID)
+			utils.InfoLogger.Println("Ride completed and driver released:", d.ID)
+
 			MarkCompleted(task.ID)
 			return
 		}
