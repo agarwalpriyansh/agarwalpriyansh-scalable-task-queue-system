@@ -108,12 +108,13 @@ docker-compose ps
 ```
 Wait for all services to show `Up` (healthy). This may take ~30-45 seconds for RabbitMQ and Postgres to initialize.
 
-### 3️⃣ Initialize Database (Mandatory)
-Seed the `drivers` table so the system has drivers to assign to rides:
-```bash
-docker exec -it postgres psql -U postgres -d ride_booking -c "CREATE TABLE IF NOT EXISTS drivers (id VARCHAR(255) PRIMARY KEY, name VARCHAR(255), latitude DOUBLE PRECISION NOT NULL, longitude DOUBLE PRECISION NOT NULL, status VARCHAR(50) DEFAULT 'available');"
+### 3️⃣ Initialize Database (Automated)
+The system is designed to be self-healing. The **Driver Service** will automatically run migrations and seed the initial drivers on startup. 
 
-docker exec -it postgres psql -U postgres -d ride_booking -c "INSERT INTO drivers (id, name, latitude, longitude) VALUES ('d1', 'John Doe', 12.9716, 77.5946), ('d2', 'Jane Smith', 12.9500, 77.6000), ('d3', 'Bob Wilson', 12.9800, 77.5800) ON CONFLICT (id) DO NOTHING;"
+**Manual Override (Optional):**
+If you ever need to manually reset or check the drivers, you can use these commands:
+```bash
+docker exec -it postgres psql -U postgres -d ride_booking -c "SELECT * FROM drivers;"
 ```
 
 ### 4️⃣ Run the Frontend
