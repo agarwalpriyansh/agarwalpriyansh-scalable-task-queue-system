@@ -28,7 +28,7 @@ app.get('/rides/:task_id', async (req, res) => {
 
 // Create ride record
 app.post('/ride/create', async (req, res) => {
-    const { task_id, user_id, driver_id, pickup_location, dropoff_location } = req.body;
+    const { task_id, user_id, driver_id, driver_name, pickup_location, dropoff_location } = req.body;
     
     if (!task_id || !user_id || !driver_id || !pickup_location || !dropoff_location) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -36,10 +36,10 @@ app.post('/ride/create', async (req, res) => {
 
     try {
         await pool.query(
-            `INSERT INTO completed_rides (task_id, user_id, driver_id, pickup_location, dropoff_location, status) 
-             VALUES ($1, $2, $3, $4, $5, 'COMPLETED') 
+            `INSERT INTO completed_rides (task_id, user_id, driver_id, driver_name, pickup_location, dropoff_location, status) 
+             VALUES ($1, $2, $3, $4, $5, $6, 'COMPLETED') 
              ON CONFLICT (task_id) DO NOTHING`,
-            [task_id, user_id, driver_id, pickup_location, dropoff_location]
+            [task_id, user_id, driver_id, driver_name, pickup_location, dropoff_location]
         );
         console.log(`✨ Ride record created for task: ${task_id}`);
         res.status(201).json({ message: 'Ride created successfully' });

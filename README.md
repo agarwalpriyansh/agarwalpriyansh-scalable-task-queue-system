@@ -75,47 +75,91 @@ Driver locking is implemented using Redis `SET NX` (set-if-not-exists) with a TT
 
 ---
 
-## 🚀 Running the E2E Test Locally
+## 🚀 Getting Started
 
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- [Node.js](https://nodejs.org/) v18+ installed
+- [Node.js](https://nodejs.org/) v18+ 
 
-### Steps
+---
 
-**1. Clone the repository**
+### 1️⃣ Clone the Repository
 ```bash
 git clone <repo-url>
 cd agarwalpriyansh-scalable-task-queue-system
 ```
 
-**2. Remove any stale containers (if re-running)**
+### 2️⃣ Run the Backend (Distributed Services)
+The easiest way to run the entire backend stack (9 services) is using Docker Compose.
+
+**Clean up existing containers (optional but recommended):**
 ```bash
-docker rm -f postgres redis 2>nul
 docker-compose down -v
 ```
 
-**3. Start all services**
+**Start all services:**
 ```bash
 docker-compose up --build -d
 ```
 
-Wait ~30 seconds for all services to become healthy. You can verify with:
+**Verify services are up:**
 ```bash
 docker-compose ps
 ```
-All 9 services should show `Up`.
+Wait for all services to show `Up` (healthy). This may take ~30-45 seconds for RabbitMQ and Postgres to initialize.
 
-**4. Set up the database schema**
-
-The `drivers` table must be created manually before running the test:
+### 3️⃣ Initialize Database (Mandatory)
+Seed the `drivers` table so the system has drivers to assign to rides:
 ```bash
 docker exec -it postgres psql -U postgres -d ride_booking -c "CREATE TABLE IF NOT EXISTS drivers (id VARCHAR(255) PRIMARY KEY, name VARCHAR(255), latitude DOUBLE PRECISION NOT NULL, longitude DOUBLE PRECISION NOT NULL, status VARCHAR(50) DEFAULT 'available');"
+
+docker exec -it postgres psql -U postgres -d ride_booking -c "INSERT INTO drivers (id, name, latitude, longitude) VALUES ('d1', 'John Doe', 12.9716, 77.5946), ('d2', 'Jane Smith', 12.9500, 77.6000), ('d3', 'Bob Wilson', 12.9800, 77.5800) ON CONFLICT (id) DO NOTHING;"
 ```
 
-**5. Run the E2E test**
+### 4️⃣ Run the Frontend
+The frontend is a React application that communicates with the API Gateway.
+
 ```bash
+cd ride-frontend
+npm install
+npm run dev
+```
+The app will be available at [http://localhost:5173](http://localhost:5173).
+
+---
+
+## 🛠️ Useful Commands & Information
+
+### Service Ports
+| Service | Internal Port | External Port | URL |
+| :--- | :--- | :--- | :--- |
+| **API Gateway** | 3000 | 3001 | http://localhost:3001 |
+| **Task Service** | 5000 | 5000 | http://localhost:5000 |
+| **Ride Service** | 4000 | 4000 | http://localhost:4000 |
+| **Driver Service**| 8081 | 8081 | http://localhost:8081 |
+| **RabbitMQ UI** | 15672| 15673| http://localhost:15673 (guest/guest) |
+| **Postgres** | 5432 | 5435 | `localhost:5435` |
+| **Redis** | 6379 | 6381 | `localhost:6381` |
+
+### Monitoring & Logs
+**View logs for all services:**
+```bash
+docker-compose logs -f
+```
+
+**View logs for a specific service (e.g., worker-service):**
+```bash
+docker-compose logs -f worker-service
+```
+
+### Testing
+**Run End-to-End Test script:**
+```bash
+# From the root directory
 node tests/e2e.test.js
 ```
 
-You should see output like:
+---
+
+## 🔐 Atomic Locking Implementation
+Driver locking is implemented using Redis `SET NX` (set-if-not-exists) with a TTL, ensuring only one worker can claim a driver at a time even under concurrent load. This prevents the "Double Booking" problem in a distributed environment.

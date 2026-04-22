@@ -67,6 +67,7 @@ services:
       - PORT=3000
       - RABBITMQ_URL=amqp://rabbitmq
       - RIDE_SERVICE_URL=http://ride-service:4000
+      - DRIVER_SERVICE_URL=http://driver-service:8081
     depends_on:
       rabbitmq:
         condition: service_healthy

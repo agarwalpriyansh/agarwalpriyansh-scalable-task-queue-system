@@ -18,7 +18,7 @@ func ProcessTask(task models.Task) {
 	for _, d := range drivers {
 		if services.LockDriver(d.ID, task.ID) {
 			utils.InfoLogger.Println("Driver assigned:", d.ID)
-			services.CreateRide(task, d.ID)
+			services.CreateRide(task, d.ID, d.Name)
 
 			// Simulating ride duration as requested (1 minute)
 			utils.InfoLogger.Println("Ride in progress for task:", task.ID)

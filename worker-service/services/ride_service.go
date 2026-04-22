@@ -9,11 +9,12 @@ import (
 	"worker-service/utils"
 )
 
-func CreateRide(task models.Task, driverID string) {
+func CreateRide(task models.Task, driverID string, driverName string) {
 	body, _ := json.Marshal(map[string]string{
 		"task_id":          task.ID,
 		"user_id":          task.UserID,
 		"driver_id":        driverID,
+		"driver_name":      driverName,
 		"pickup_location":  task.PickupLocation,
 		"dropoff_location": task.DropoffLocation,
 	})

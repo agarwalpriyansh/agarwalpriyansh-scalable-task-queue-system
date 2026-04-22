@@ -16,6 +16,7 @@ async function initDB() {
                 task_id UUID PRIMARY KEY,
                 user_id VARCHAR(255) NOT NULL,
                 driver_id VARCHAR(255) NOT NULL,
+                driver_name VARCHAR(255),
                 pickup_location VARCHAR(255) NOT NULL,
                 dropoff_location VARCHAR(255) NOT NULL,
                 status VARCHAR(50) DEFAULT 'COMPLETED',

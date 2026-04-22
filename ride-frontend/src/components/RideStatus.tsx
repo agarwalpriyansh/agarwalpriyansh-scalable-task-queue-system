@@ -1,127 +1,150 @@
-import React, { useEffect, useState } from 'react';
-import { Clock, CheckCircle2, AlertCircle, RefreshCw, Navigation } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Car, CheckCircle2, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
 interface RideStatusProps {
   taskId: string;
-  onFinished?: () => void;
+  onFinished: () => void;
+}
+
+interface StatusResponse {
+  task_id: string;
+  status: string;
+  ride_id?: string;
+  worker_id?: string;
+  driver_id?: string;
+  driver_name?: string;
+  error?: string;
+  created_at?: string;
 }
 
 const RideStatus: React.FC<RideStatusProps> = ({ taskId, onFinished }) => {
-  const [rideDetails, setRideDetails] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<StatusResponse | null>(null);
+  const [polling, setPolling] = useState(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await axios.get(`${apiUrl}/api/status/${taskId}`);
+      setStatus(response.data);
+
+      const normalizedStatus = response.data.status?.toLowerCase();
+      if (normalizedStatus === 'completed' || normalizedStatus === 'failed') {
+        setPolling(false);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        
+        // Auto-return to home after 10 seconds if successful
+        if (normalizedStatus === 'completed') {
+          setTimeout(onFinished, 10000);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching status:', error);
+    }
+  };
 
   useEffect(() => {
-    let interval: any;
-
-    const fetchStatus = async () => {
-      try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-        const response = await axios.get(`${apiUrl}/api/status/${taskId}`);
-        setRideDetails(response.data);
-        setError(null);
-
-        if (response.data.status === 'COMPLETED') {
-          clearInterval(interval);
-          if (onFinished) onFinished();
-        }
-      } catch (err) {
-        console.error('Error fetching status:', err);
-        // We don't set error here because 404 is expected while pending
-        if ((err as any).response?.status === 404) {
-             setRideDetails({ status: 'PENDING' });
-        } else {
-            setError('Error connecting to service');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchStatus();
-    interval = setInterval(fetchStatus, 3000); // Poll every 3 seconds
-
-    return () => clearInterval(interval);
+    intervalRef.current = setInterval(fetchStatus, 3000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [taskId]);
 
-  if (loading && !rideDetails) {
-    return (
-      <div className="glass-card" style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-        <RefreshCw className="animate-spin" size={32} color="#6366f1" />
-      </div>
-    );
-  }
+  const getStatusDisplay = () => {
+    switch (status?.status?.toLowerCase()) {
+      case 'pending':
+        return {
+          icon: <RefreshCw className="animate-spin" size={48} color="#f7c02b" />,
+          title: 'Finding Your Driver',
+          desc: 'Connecting you with the closest yellow cab.',
+          badge: 'Searching',
+          badgeClass: 'bg-yellow-100 text-yellow-700'
+        };
+      case 'completed':
+        return {
+          icon: <CheckCircle2 size={48} color="#22c55e" />,
+          title: 'Ride Confirmed!',
+          desc: `${status.driver_name || 'Your driver'} is on their way.`,
+          badge: 'Assigned',
+          badgeClass: 'bg-green-100 text-green-700'
+        };
+      case 'failed':
+        return {
+          icon: <AlertCircle size={48} color="#ef4444" />,
+          title: 'Dispatch Failed',
+          desc: 'No drivers available. Please try again.',
+          badge: 'Error',
+          badgeClass: 'bg-red-100 text-red-700'
+        };
+      default:
+        return {
+          icon: <Clock size={48} className="text-slate-300" />,
+          title: 'Processing Request',
+          desc: 'Initializing your ride request...',
+          badge: 'Initializing',
+          badgeClass: 'bg-slate-100 text-slate-500'
+        };
+    }
+  };
 
-  const status = rideDetails?.status || 'PENDING';
+  const display = getStatusDisplay();
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="glass-card"
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Active Ride</h2>
-          <p style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>Task ID: {taskId}</p>
+    <div className="w-full max-w-[450px] bg-white p-6 md:p-12 rounded-lg shadow-2xl text-center text-slate-900 overflow-hidden relative">
+      <div className={cn("absolute top-6 right-6 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest", display.badgeClass)}>
+        {display.badge}
+      </div>
+      
+      <div className="flex justify-center mb-8">
+        {display.icon}
+      </div>
+      
+      <h2 className="text-2xl font-black mb-2 tracking-tighter capitalize">{display.title}</h2>
+      <p className="text-slate-500 text-sm mb-10 px-4">{display.desc}</p>
+
+      <div className="bg-slate-50 border border-slate-100 rounded-lg p-6 text-left mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-1.5 h-1.5 bg-slate-300 rounded-full"></div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tracking ID: {taskId.slice(0, 8)}...</span>
         </div>
-        <div className={`status-badge status-${status.toLowerCase()}`}>
-          {status === 'PENDING' && <Clock size={14} style={{ marginRight: 4 }} />}
-          {status === 'COMPLETED' && <CheckCircle2 size={14} style={{ marginRight: 4 }} />}
-          {status}
-        </div>
+        
+        <AnimatePresence>
+          {status?.status === 'completed' && (
+            <motion.div 
+               initial={{ opacity: 0, y: 10 }} 
+               animate={{ opacity: 1, y: 0 }}
+               className="flex items-center gap-4"
+            >
+              <div className="bg-primary p-3 rounded-full shadow-lg shadow-primary/30">
+                <Car size={24} className="text-background" />
+              </div>
+              <div>
+                <p className="font-black text-sm uppercase">{status.driver_name || 'Driver Found'}</p>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary-dark uppercase">
+                    Cab #{status.driver_id}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <AnimatePresence mode="wait">
-        {status === 'PENDING' ? (
-          <motion.div 
-            key="pending"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ textAlign: 'center', padding: '1rem 0' }}
-          >
-            <Navigation className="animate-pulse" size={48} color="#6366f1" style={{ marginBottom: '1rem' }} />
-            <p style={{ color: 'var(--text-dim)' }}>Searching for the nearest driver...</p>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="details"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ marginTop: '1rem' }}
-          >
-             <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Driver ID</p>
-                        <p style={{ fontWeight: 600 }}>{rideDetails.driver_id || 'N/A'}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Status</p>
-                        <p style={{ color: 'var(--success)', fontWeight: 600 }}>Arrived</p>
-                    </div>
-                </div>
-                <div style={{ marginTop: '1rem' }}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>From</p>
-                    <p style={{ marginBottom: '0.5rem' }}>{rideDetails.pickup_location}</p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>To</p>
-                    <p>{rideDetails.dropoff_location}</p>
-                </div>
-             </div>
-          </motion.div>
+      <button 
+        onClick={onFinished}
+        className={cn(
+            "w-full py-4 text-sm font-black uppercase rounded-md transition-all shadow-md",
+            status?.status === 'completed' 
+                ? "bg-slate-900 text-white hover:bg-slate-800" 
+                : "bg-slate-100 text-slate-400 hover:bg-slate-200"
         )}
-      </AnimatePresence>
-
-      {error && (
-        <div style={{ marginTop: '1rem', color: '#f87171', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <AlertCircle size={14} /> {error}
-        </div>
-      )}
-    </motion.div>
+      >
+        {status?.status === 'completed' ? 'Return Home' : 'Cancel Request'}
+      </button>
+    </div>
   );
 };
 
